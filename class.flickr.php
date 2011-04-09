@@ -145,6 +145,31 @@ class FlickrPhoto {
 		return $xml;
 	}
 
+	public function asImageSitemap( SimpleXMLElement $url_el ) {
+		if ( empty( $url_el ) || empty( $this->sizes ) )
+			return;
+
+		$largest_image = array_pop( $this->sizes );
+		if ( empty( $largest_image ) )
+			return;
+
+		$prefix = 'image';
+		$image = $url_el->addChild( $prefix . ':image' );
+		$image->addChild( $prefix . ':loc', $largest_image["url"] );
+		if ( ! empty( $this->title ) )
+			$image->addChild( $prefix . ':title', $this->title );
+		if ( ! empty( $this->description ) )
+			$image->addChild( $prefix . ':caption', $this->description );
+
+		return $url_el;
+	}
+
+	/**
+	 * Load information about the given photo from Flickr
+	 *
+	 * @param FlickrRequest $request existing Flickr request if you would like to reuse
+	 * @return FlickrRequest Flickr request object for reuse
+	 */
 	private function load_info( $request=null ) {
 		if ( is_null( $request ) )
 			$request = new FlickrRequest();
@@ -182,6 +207,12 @@ class FlickrPhoto {
 		return $request;
 	}
 
+	/**
+	 * Store multiple sizes available for the given photo identifier on Flickr
+	 *
+	 * @param FlickrRequest $request existing Flickr request if you would like to reuse
+	 * @return FlickrRequest Flickr request object for reuse
+	 */
 	private function load_sizes( $request=null ) {
 		if ( is_null( $request ) )
 			$request = new FlickrRequest();

@@ -162,7 +162,7 @@ function flickr_media_rss() {
 			continue;
 
 		extract( shortcode_atts( array('photo'=>''), $attr ) );
-		if ( !empty($photo) )
+		if ( ! empty($photo) )
 			echo flickr_media_rss_single_photo( $photo );
 	}
 }
@@ -177,6 +177,37 @@ function flickr_media_rss_ns() {
 	echo 'xmlns:media="http://search.yahoo.com/mrss/"';
 }
 
+/**
+ * Add Google image sitemap elements to Sitemap XML
+ *
+ * @param array $namespaces existing prefix=>name pairs
+ * @param string $type root element: either urlset for a list of urls or sitemapindex for a list of sitemaps
+ */
+function flickr_sitemap_xml_namespaces( array $namespaces, $type ) {
+	if ( $type === 'urlset' )
+		$namespaces['image'] = 'http://www.google.com/schemas/sitemap-image/1.1';
+	return $namespaces;
+}
+
+function flickr_sitemap_xml_single_photo( $photo_id, SimpleXMLElement $url_el ) {
+	require_once( dirname(__FILE__) . '/class.flickr.php' );
+
+	$photo = new FlickrPhoto( $photo_id );
+	if ( ! is_wp_error( $photo ) )
+		$url_el = $photo->asImageSitemap( $url_el );
+
+	return $url_el;
+}
+
+function flickr_sitemap_xml_url_element( SimpleXMLElement $url_el ) {
+	foreach( find_all_flickr_shortcodes( get_the_content() ) as $attr ) {
+		extract( shortcode_atts( array('photo'=>''), $attr ) );
+		if ( ! empty($photo) )
+			$url_el = flickr_sitemap_xml_single_photo( $photo, $url_el );
+	}
+	return $url_el;
+}
+
 /* Break out actions by admin or user-facing
  */
 if ( is_admin() ) {
@@ -187,5 +218,7 @@ if ( is_admin() ) {
 	add_action( 'atom_entry', 'flickr_media_rss' );
 	add_action( 'rss2_ns', 'flickr_media_rss_ns' );
 	add_action( 'atom_ns', 'flickr_media_rss_ns' );
+	add_filter( 'sitemap_xml_namespaces', 'flickr_sitemap_xml_namespaces', 1, 2 );
+	add_filter( 'sitemap_xml_url_element', 'flickr_sitemap_xml_url_element', 1, 1 );
 }
 ?>

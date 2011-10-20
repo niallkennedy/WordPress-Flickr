@@ -153,13 +153,13 @@ class FlickrPhoto {
 		if ( empty( $largest_image ) )
 			return;
 
-		$prefix = 'image';
-		$image = $url_el->addChild( $prefix . ':image' );
-		$image->addChild( $prefix . ':loc', $largest_image["url"] );
+		$namespace = 'http://www.google.com/schemas/sitemap-image/1.1';
+		$image = $url_el->addChild( 'image', null, $namespace );
+		$image->addChild( 'loc', esc_url( $largest_image['url'] ), $namespace );
 		if ( ! empty( $this->title ) )
-			$image->addChild( $prefix . ':title', $this->title );
+			$image->addChild( 'title', esc_html( trim( $this->title ) ), $namespace );
 		if ( ! empty( $this->description ) )
-			$image->addChild( $prefix . ':caption', $this->description );
+			$image->addChild( 'caption', esc_html( trim( strip_tags( $this->description ) ) ), $namespace );
 
 		return $url_el;
 	}

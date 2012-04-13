@@ -221,9 +221,31 @@ function flickr_sitemap_xml_url_element( SimpleXMLElement $url_el ) {
 	return $url_el;
 }
 
+/**
+ * Do not check WordPress.org plugin repository for plugin updates. You won't find anything for this custom plugin.
+ *
+ * @param array $r merged explicit args and defaults from WP_Http->request()
+ * @param string $url URI resource
+ * @return array filtered version of $r with our plugin removed from the list if the request was an update check
+ */
+function flickr_remove_plugin_update_check( $r, $url ) {
+	if ( strlen( $url ) < 45 || substr_compare( $url, 'http://api.wordpress.org/plugins/update-check', 0, 45 ) !== 0 || ! array_key_exists( 'plugins', $r['body'] ) )
+		return $r; // not a plugin update request
+	$plugins = maybe_unserialize( $r['body']['plugins'] );
+	if ( ! empty( $plugins ) ) {
+		$plugin_basename = plugin_basename( __FILE__ );
+		unset( $plugins->plugins[ $plugin_basename ] );
+		unset( $plugins->active[ array_search( $plugin_basename, $plugins->active ) ] );
+		$r['body']['plugins'] = maybe_serialize( $plugins );
+		unset( $plugin_basename );
+	}
+	return $r;
+}
+
 /* Break out actions by admin or user-facing
  */
 if ( is_admin() ) {
+	add_filter( 'http_request_args', 'flickr_remove_plugin_update_check', 5, 2 );
 	require_once( dirname(__FILE__) . '/settings.php' );
 } else {
 	add_shortcode( 'flickr', 'flickr_shortcode' );
